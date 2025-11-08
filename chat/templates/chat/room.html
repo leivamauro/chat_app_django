@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+
+<div class="container">
+    <h2>Sala {{ room.name }}</h2>
+    <div class="message-box">
+        <!-- populated from js -->
+    </div>
+    <input type="text" id="message">
+    <div class="d-flet justify-content-center">
+        <a href="{% url 'home' %}" class="btn btn-secundary">
+            volver
+        </a>
+        <button class="btn btn-primary" id="sendMessage">
+            enviar
+        </button>
+    </div>
+</div>
+
+<script>
+    var user = '{{ request.user }}'
+    var room_id = '{{ room.id }}'
+</script>
+
+<script src="{% static 'js/chat.js' %}"></script>
+
+{% endblock %}

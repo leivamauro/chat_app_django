@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %} 
+
+<div class="container p-3 d-flex flex-column justify-content-center">
+    <h1>listados de salas</h1>
+    <div class="rooms">
+        {% for room in rooms %}
+            <a href="{% url 'room' room.id %}" class="btn btn-success">{{ room.name }}</a>
+        {% empty %}
+            <h1>No se encontraron salas</h1>
+        {% endfor %}
+    </div>
+</div>
+
+{% endblock %}
