@@ -1,26 +1,47 @@
-const btnSend = document.getElementById('sendMessage')
-const messageBox = document.querySelector('.message-box')
-const inputMessage = document.getElementById('message')
+const btnSend = document.getElementById('sendMessage');
+const messageBox = document.querySelector('.message-box');
+const inputMessage = document.getElementById('message');
 
-btnSend.addEventListener('click', sendMessage)
+btnSend.addEventListener('click', sendMessage);
 
-url = 'ws://' + window.location.host + '/ws/room/' + room_id + '/'
-console.log(url)
+// websocket javascrip
 
-chatSocket = new WebSocket(url)
+url = "ws://" + window.location.host + "/ws/room/" + room_id + "/";
 
-chatSocket.onopen = function(e) {
-    console.log("CONEXION ESTABLECIDA")
+const chatSocket = new WebSocket(url);
+
+chatSocket.onopen = function (e) {
+    console.log("Conexion abrierta del cliente");
 }
 
-chatSocket.onclose = function(e) {
-    console.log("CONEXION CERRADA")
+chatSocket.addEventListener("message", (e) => {
+    let data = JSON.parse(e.data)
+    if (user === data.username) return;
+    messageBox.innerHTML += 
+    `
+    <div class="container">
+        <div class="alert alert-success" role="alert">
+            ${data.message}
+            <div class="d-flex align-items-end justify-content-between text-body-secondary">
+                <small class="text-start fst-italic">${data.username}</small>
+                <small class="text-end">12/7/5 12:00</small>
+            </div>
+        </div>
+    </div>
+    `;
+});
+
+chatSocket.onclose = function (e) {
+    console.log("cierre de conexion con el websocket del cliente");
 }
+
 
 function sendMessage() {
-    let msg = inputMessage.value.trim()
-
+    let msg = inputMessage.value.trim();
     if (msg !== ''){
+        chatSocket.send(JSON.stringify({"message": msg})); // envia el mensaje al servidor
+        inputMessage.value = '';
+
         messageBox.innerHTML += 
         `
         <div class="container">
@@ -32,10 +53,7 @@ function sendMessage() {
                 </div>
             </div>
         </div>
-        `
-        inputMessage.value = ''
-    } else {
-        console.log("mensaje vacio")
+        `;
+        
     }
-
-}    
+}
