@@ -1,26 +1,58 @@
-import json
-from channels.generic.websocket import WebsocketConsumer
+from channels.generic.websocket import JsonWebsocketConsumer
+from asgiref.sync import async_to_sync
+from .models import RoomsModel
 
 
-class ChatConsumer(WebsocketConsumer):
+class ChatConsumer(JsonWebsocketConsumer):
 
     def connect(self):
-        # Called on connection.
-        # To accept the connection call:
-        print("conexion establecida")
+        # antes de aceptar la conexion debo saber el nombre del grupo al cual conectarme
+        # usare su id con el nombre chat antepuesto (ej: chat_1)
+    
+        self.room_id = self.scope['url_route']['kwargs']['room_id']
+        self.room_name = RoomsModel.objects.get(pk=self.room_id).name
+        self.group_name = f"chat_{self.room_name}"
+        
+        self.agregar_grupo = async_to_sync(self.channel_layer.group_add)
+        self.agregar_grupo(self.group_name, self.channel_name)
+
+        # acepta la conexion a un websocket
         self.accept()
+        print("Conexion aceptada en la sala: ", self.room_name)
 
-    def disconnect(self, close_code):
-        # Called when the socket closes
-        print("conexion terminada")
+    def disconnect(self, code):
+        # cuando se desconecta de un websocket
+        self.quitar_grupo = async_to_sync(self.channel_layer.group_discard)
+        self.quitar_grupo(self.group_name, self.channel_name)
+        print(f"Conexion de la sala {self.room_name} terminada.")
 
-    def receive(self, text_data=None, bytes_data=None):
-        
-        text_data_json = json.loads(text_data)
-        print(text_data_json)
-        
-        # Called with either text_data or bytes_data for each frame
-        # You can call:
-        self.send(text_data=json.dumps({
-            'message': text_data_json['message']
-        }))
+
+    def receive_json(self, content):
+
+        mensaje = content.get('message') # mensaje recivido del cliente que debo enviar al grupo
+
+        print("mensaje recivido--------", mensaje)
+
+        self.enviar_grupo = async_to_sync(self.channel_layer.group_send)
+        self.enviar_grupo(self.group_name, {
+            "type": "chat.message",
+            "message": mensaje,
+            "username": self.scope['user'].get_username(),
+            "room_name": self.room_name,
+        })
+
+
+    def chat_message(self, event):
+
+        print("mensaje enviado a los grupos------")
+
+        self.send_json(
+            {
+                "message": event['message'],
+                "username": event['username'],
+                "room_name": event['room_name']
+            }
+        )
+
+
+
